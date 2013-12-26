@@ -10,3 +10,6 @@ services:
         arguments:
             - @ezpublish.api.service.search
             - @ezpublish.api.service.location
+            - @ezpublish.api.service.content_type
+            - @ezpublish.api.service.content
+            - [ 'blog_category' ]

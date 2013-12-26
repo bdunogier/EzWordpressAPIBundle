@@ -9,6 +9,8 @@
 namespace BD\Bundle\EzWordpressAPIBundle\WordpressAPI;
 
 use BD\Bundle\WordpressAPIBundle\Service\Category;
+use eZ\Publish\API\Repository\ContentService;
+use eZ\Publish\API\Repository\ContentTypeService;
 use eZ\Publish\API\Repository\LocationService;
 use eZ\Publish\API\Repository\SearchService;
 use eZ\Publish\API\Repository\Values\Content\Content;
@@ -22,37 +24,101 @@ class CategoryService implements Category
     /** @var LocationService */
     protected $locationService;
 
-    public function __construct( SearchService $searchService, LocationService $locationService)
+    /** @var ContentTypeService */
+    protected $contentTypeService;
+
+    /** @var ContentService */
+    protected $contentService;
+
+    protected static $blogCategoryIdentifier = 'blog_category';
+
+    public function __construct( SearchService $searchService, LocationService $locationService, ContentTypeService $contentTypeService, ContentService $contentService, array $options = array() )
     {
+        if ( isset( $options['blog_category_identifier'] ) )
+        {
+            self::$blogCategoryIdentifier = $options['blog_category_identifier'];
+        }
+
         $this->searchService = $searchService;
         $this->locationService = $locationService;
+        $this->contentTypeService = $contentTypeService;
+        $this->contentService = $contentService;
     }
 
     public function getList()
     {
         $query = new Query();
-        $query->criterion = new Query\Criterion\ContentTypeIdentifier( 'blog_category' );
+        $query->criterion = new Query\Criterion\ContentTypeIdentifier( self::$blogCategoryIdentifier );
         $query->sortClauses = array( new Query\SortClause\ContentName );
 
-        $recentPosts = array();
+        $categories = array();
         foreach ( $this->searchService->findContent( $query )->searchHits as $searchHit )
         {
-            $recentPosts[] = $this->serializeCategory( $searchHit->valueObject );
+            $categories[] = $this->serializeCategory( $searchHit->valueObject );
         }
 
-        return $recentPosts;
+        return $categories;
+    }
+
+    /**
+     * Returns the categories of a post
+     *
+     * @param mixed $post
+     *
+     * @return array Returns the categories of a content
+     */
+    public function getPostCategories( $postId )
+    {
+        $contentInfo = $this->contentService->loadContentInfo( $postId );
+        $locations = $this->locationService->loadLocations( $contentInfo );
+
+        $categories = array();
+        foreach ( $locations as $location )
+        {
+            $parent = $this->locationService->loadLocation( $location->parentLocationId );
+            if ( $parent->contentInfo->contentTypeId != $this->getCategoryTypeId() )
+            {
+                continue;
+            }
+            $categories[] = $this->serializeCategory( $this->contentService->loadContent( $parent->contentId ) );
+        }
+
+        return $categories;
     }
 
     protected function serializeCategory( Content $category )
     {
-        $location = $this->locationService->loadLocation( $category->contentInfo->mainLocationId );
-
         return array(
             'categoryId' => $category->contentInfo->mainLocationId,
             'categoryName' => (string)$category->fields['name']['eng-GB'],
             'categoryDescription' => (string)$category->fields['description']['eng-GB'],
             'description' => (string)$category->fields['description']['eng-GB'],
-            'parentId' => $location->parentLocationId
+            'parentId' => $this->getParentCategoryId( $category )
         );
+    }
+
+    protected function getParentCategoryId( Content $category )
+    {
+        $location = $this->locationService->loadLocation( $category->contentInfo->mainLocationId );
+        $parentLocation = $this->locationService->loadLocation( $location->parentLocationId );
+
+        if ( $parentLocation->contentInfo->contentTypeId === $this->getCategoryTypeId() )
+        {
+            return $parentLocation->contentId;
+        }
+
+        return 0;
+    }
+
+    protected function getCategoryTypeId()
+    {
+        static $categoryId = null;
+
+        if ( !isset( $categoryId ) )
+        {
+            $categoryId = $this->contentTypeService->loadContentTypeByIdentifier( self::$blogCategoryIdentifier )->id;
+        }
+
+        return $categoryId;
     }
 }
