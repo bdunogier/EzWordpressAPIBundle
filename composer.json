@@ -1,0 +1,20 @@
+{
+    "name": "bdunogier/ezwordpressapibundle",
+    "description": "eZ Publish Wordpress API bridge",
+    "license": "GPL-2.0",
+    "authors": [
+        {
+            "name": "Bertrand Dunogier",
+            "homepage": "https://github.com/bdunogier"
+        }
+    ],
+    "require": {
+        "ezsystems/ezpublish-kernel": "@dev",
+        "bdunogier/wordpressapibundle": "@dev"
+    },
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-0": {"BD\\Bundle\\EzWordpressAPIBundle": ""}
+    },
+    "target-dir": "BD/Bundle/EzWordpressAPIBundle/"
+}
