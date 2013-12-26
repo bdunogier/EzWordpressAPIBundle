@@ -1,6 +1,6 @@
 <?php
 
-namespace BD\Bundle\WordpressAPIBundle\DependencyInjection;
+namespace BD\Bundle\EzWordpressAPIBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;

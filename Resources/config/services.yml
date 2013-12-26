@@ -1,3 +1,12 @@
 parameters:
+    bd_ez_wordpress_api.service.category.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\CategoryService
 
 services:
+    bd_wordpress_api.service.category:
+        alias: bd_ez_wordpress_api.service.category
+
+    bd_ez_wordpress_api.service.category:
+        class: %bd_ez_wordpress_api.service.category.class%
+        arguments:
+            - @ezpublish.api.service.search
+            - @ezpublish.api.service.location

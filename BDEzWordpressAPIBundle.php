@@ -1,6 +1,6 @@
 <?php
 
-namespace BD\Bundle\WordpressAPIBundle;
+namespace BD\Bundle\EzWordpressAPIBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
