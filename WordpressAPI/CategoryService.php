@@ -16,33 +16,16 @@ use eZ\Publish\API\Repository\SearchService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Query;
 
-class CategoryService implements Category
+class CategoryService extends BaseService implements Category
 {
-    /** @var SearchService */
-    protected $searchService;
-
-    /** @var LocationService */
-    protected $locationService;
-
-    /** @var ContentTypeService */
-    protected $contentTypeService;
-
-    /** @var ContentService */
-    protected $contentService;
-
     protected static $blogCategoryIdentifier = 'blog_category';
 
-    public function __construct( SearchService $searchService, LocationService $locationService, ContentTypeService $contentTypeService, ContentService $contentService, array $options = array() )
+    public function __construct( array $options = array() )
     {
         if ( isset( $options['blog_category_identifier'] ) )
         {
             self::$blogCategoryIdentifier = $options['blog_category_identifier'];
         }
-
-        $this->searchService = $searchService;
-        $this->locationService = $locationService;
-        $this->contentTypeService = $contentTypeService;
-        $this->contentService = $contentService;
     }
 
     public function getList()
@@ -52,7 +35,7 @@ class CategoryService implements Category
         $query->sortClauses = array( new Query\SortClause\ContentName );
 
         $categories = array();
-        foreach ( $this->searchService->findContent( $query )->searchHits as $searchHit )
+        foreach ( $this->getRepository()->getSearchService()->findContent( $query )->searchHits as $searchHit )
         {
             $categories[] = $this->serializeCategory( $searchHit->valueObject );
         }
@@ -69,18 +52,21 @@ class CategoryService implements Category
      */
     public function getPostCategories( $postId )
     {
-        $contentInfo = $this->contentService->loadContentInfo( $postId );
-        $locations = $this->locationService->loadLocations( $contentInfo );
+        $contentService = $this->getRepository()->getContentService();
+        $locationService = $this->getRepository()->getLocationService();
+
+        $contentInfo = $contentService->loadContentInfo( $postId );
+        $locations = $locationService->loadLocations( $contentInfo );
 
         $categories = array();
         foreach ( $locations as $location )
         {
-            $parent = $this->locationService->loadLocation( $location->parentLocationId );
+            $parent = $locationService->loadLocation( $location->parentLocationId );
             if ( $parent->contentInfo->contentTypeId != $this->getCategoryTypeId() )
             {
                 continue;
             }
-            $categories[] = $this->serializeCategory( $this->contentService->loadContent( $parent->contentId ) );
+            $categories[] = $this->serializeCategory( $contentService->loadContent( $parent->contentId ) );
         }
 
         return $categories;
@@ -99,8 +85,10 @@ class CategoryService implements Category
 
     protected function getParentCategoryId( Content $category )
     {
-        $location = $this->locationService->loadLocation( $category->contentInfo->mainLocationId );
-        $parentLocation = $this->locationService->loadLocation( $location->parentLocationId );
+        $locationService = $this->getRepository()->getLocationService();
+
+        $location = $locationService->loadLocation( $category->contentInfo->mainLocationId );
+        $parentLocation = $locationService->loadLocation( $location->parentLocationId );
 
         if ( $parentLocation->contentInfo->contentTypeId === $this->getCategoryTypeId() )
         {
@@ -116,7 +104,10 @@ class CategoryService implements Category
 
         if ( !isset( $categoryId ) )
         {
-            $categoryId = $this->contentTypeService->loadContentTypeByIdentifier( self::$blogCategoryIdentifier )->id;
+            $categoryId = $this->getRepository()
+                ->getContentTypeService()
+                ->loadContentTypeByIdentifier( self::$blogCategoryIdentifier )
+                ->id;
         }
 
         return $categoryId;

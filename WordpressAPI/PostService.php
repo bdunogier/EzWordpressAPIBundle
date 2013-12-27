@@ -16,35 +16,12 @@ use eZ\Publish\API\Repository\SearchService;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Query;
 
-class PostService implements Post
+class PostService extends BaseService implements Post
 {
-    /** @var LocationService */
-    protected $locationService;
-
-    /** @var ContentService */
-    protected $contentService;
-
-    /** @var ContentTypeService */
-    protected $contentTypeService;
-
-    /** @var SearchService */
-    protected $searchService;
-
     protected static $blogPostContentTypeId = 'blog_post';
 
-    public function __construct(
-        ContentService $contentService,
-        LocationService $locationService,
-        ContentTypeService $contentTypeService,
-        SearchService $searchService,
-        array $options = array()
-    )
+    public function __construct( array $options = array() )
     {
-        $this->contentService = $contentService;
-        $this->locationService = $locationService;
-        $this->contentTypeService = $contentTypeService;
-        $this->searchService = $searchService;
-
         if ( isset( $options['content_type_id'] ) )
         {
             self::$blogPostContentTypeId = $options['content_type_id'];
@@ -53,18 +30,22 @@ class PostService implements Post
 
     public function createPost( $title, $description, array $categories )
     {
-        $createStruct = $this->contentService->newContentCreateStruct(
-            $this->contentTypeService->loadContentTypeByIdentifier( self::$blogPostContentTypeId ),
+        $contentService = $this->getRepository()->getContentService();
+
+        $createStruct = $contentService->newContentCreateStruct(
+            $this->getRepository()
+                ->getContentTypeService()
+                ->loadContentTypeByIdentifier( self::$blogPostContentTypeId ),
             'eng-GB'
         );
         $createStruct->setField( 'title', $title );
 
-        $draft = $this->contentService->createContent(
+        $draft = $contentService->createContent(
             $createStruct,
-            array( $this->locationService->newLocationCreateStruct( 2 ) )
+            array( $this->getRepository()->getLocationService()->newLocationCreateStruct( 2 ) )
         );
 
-        return $this->contentService->publishVersion( $draft->versionInfo )->id;
+        return $contentService->publishVersion( $draft->versionInfo )->id;
     }
 
     public function findRecentPosts( $limit = 5 )
@@ -73,7 +54,7 @@ class PostService implements Post
         $query->criterion = new Query\Criterion\ContentTypeIdentifier( 'blog_post' );
         $query->limit = $limit;
 
-        $results = $this->searchService->findContent( $query );
+        $results = $this->getRepository()->getSearchService()->findContent( $query );
         $recentPosts = array();
         foreach ( $results->searchHits as $searchHit )
         {
