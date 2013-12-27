@@ -1,9 +1,16 @@
 parameters:
     bd_ez_wordpress_api.service.category.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\CategoryService
+    bd_ez_wordpress_api.service.post.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\PostService
+
+    bd_ez_wordpress_api.content_type.category: 'blog_category'
+    bd_ez_wordpress_api.content_type.post: 'blog_post'
 
 services:
     bd_wordpress_api.service.category:
         alias: bd_ez_wordpress_api.service.category
+
+    bd_wordpress_api.service.post:
+        alias: bd_ez_wordpress_api.service.post
 
     bd_ez_wordpress_api.service.category:
         class: %bd_ez_wordpress_api.service.category.class%
@@ -12,4 +19,13 @@ services:
             - @ezpublish.api.service.location
             - @ezpublish.api.service.content_type
             - @ezpublish.api.service.content
-            - [ 'blog_category' ]
+            - { 'blog_category_identifier': %bd_ez_wordpress_api.content_type.category% }
+
+    bd_ez_wordpress_api.service.post:
+        class: %bd_ez_wordpress_api.service.post.class%
+        arguments:
+            - @ezpublish.api.service.content
+            - @ezpublish.api.service.location
+            - @ezpublish.api.service.content_type
+            - @ezpublish.api.service.search
+            - { 'content_type_identifier': %bd_ez_wordpress_api.content_type.post% }
