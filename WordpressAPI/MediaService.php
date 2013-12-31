@@ -92,44 +92,44 @@ class MediaService extends BaseService implements MediaServiceInterface
             'title' => (string)$content->fields['name']['eng-GB'],
             'caption' => (string)$content->fields['caption']['eng-GB'],
             'description' => $description,
-            'thumbnail' => 'http://vm:88/' . $this->getThumbnail( $content ),
-            'metadata' => array(
-                array(
-                    'file' => '',
-                    'width' => 0,
-                    'height' => 0,
-                    'sizes' => array(
-                        'thumbnail' => array(
-                            'file' => '',
-                            'width' => 0,
-                            'height' => 0,
-                            'mime-type' => ''
-                        ),
-                        'medium' => array(
-                            'file' => '',
-                            'width' => 0,
-                            'height' => 0,
-                            'mime-type' => ''
-                        ),
-                        'large' => array(
-                            'file' => '',
-                            'width' => 0,
-                            'height' => 0,
-                            'mime-type' => ''
-                        ),
-                        'post-thumbnail' => array(
-                            'file' => '',
-                            'width' => 0,
-                            'height' => 0,
-                            'mime-type' => ''
-                        ),
-                    )
-                )
-            )
+            'thumbnail' => 'http://vm:88/' . $this->getThumbnailUri( $content ),
+            'metadata' => $this->serializeMetadata( $content )
         );
     }
 
-    protected function getThumbnail( Content $content )
+    protected function serializeMetadata( Content $content )
+    {
+        $return = $this->serializeImageData( $content, 'full' );
+        $return['sizes'] = array(
+            'thumbnail' => $this->serializeImageData( $content, 'thumbnail' ),
+            'medium' => $this->serializeImageData( $content, 'medium' ),
+            'large' => $this->serializeImageData( $content, 'large' ),
+            'post-thumbnail' => $this->serializeImageData( $content, 'thumbnail' ),
+        );
+
+        return $return;
+    }
+
+    protected function serializeImageData( Content $content, $size )
+    {
+        $variation = $this->getVariation( $content, $size );
+
+        $imageSize = getimagesize( '../../web/' . $variation->uri );
+
+        return array(
+            'file' => $variation->fileName,
+            'width' => $imageSize[0],
+            'height' => $imageSize[1],
+            'mime-type' => $variation->mimeType
+        );
+    }
+
+    protected function getThumbnailUri( Content $content )
+    {
+        return $this->getVariation( $content, 'thumbnail' )->uri;
+    }
+
+    protected function getVariation( $content, $variationName )
     {
         foreach ( $content->getFields() as $field )
         {
@@ -145,7 +145,7 @@ class MediaService extends BaseService implements MediaServiceInterface
         }
 
         return $this->imageVariationHandler->getVariation(
-            $imageField, $content->versionInfo, self::$imageThumbnailVariationName
-        )->uri;
+            $imageField, $content->versionInfo, $variationName
+        );
     }
 }
