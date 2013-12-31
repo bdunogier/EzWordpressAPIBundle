@@ -8,15 +8,11 @@
  */
 namespace BD\Bundle\EzWordpressAPIBundle\WordpressAPI;
 
-use BD\Bundle\WordpressAPIBundle\Service\Post;
-use eZ\Publish\API\Repository\ContentService;
-use eZ\Publish\API\Repository\ContentTypeService;
-use eZ\Publish\API\Repository\LocationService;
-use eZ\Publish\API\Repository\SearchService;
+use BD\Bundle\WordpressAPIBundle\Service\PostServiceInterface;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Query;
 
-class PostService extends BaseService implements Post
+class PostService extends BaseService implements PostServiceInterface
 {
     protected static $blogPostContentTypeId = 'blog_post';
 

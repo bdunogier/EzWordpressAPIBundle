@@ -8,11 +8,11 @@
  */
 namespace BD\Bundle\EzWordpressAPIBundle\WordpressAPI;
 
-use BD\Bundle\WordpressAPIBundle\Service\Media as MediaServiceInterface;
+use BD\Bundle\WordpressAPIBundle\Service\MediaServiceInterface;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Query;
 
-class MediaService extends BaseService implements MediaServiceInterface
+class MediaServiceInterface extends BaseService implements MediaServiceInterface
 {
     protected static $imageContentTypeIdentifier = 'image';
 
@@ -24,8 +24,9 @@ class MediaService extends BaseService implements MediaServiceInterface
         }
     }
 
-    public function getMedia( $id )
+    public function getMedia( $mediaItemId )
     {
+
     }
 
     public function getMediaList( $offset = 0, $limit = 50 )

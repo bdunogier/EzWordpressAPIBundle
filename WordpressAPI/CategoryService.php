@@ -8,15 +8,11 @@
  */
 namespace BD\Bundle\EzWordpressAPIBundle\WordpressAPI;
 
-use BD\Bundle\WordpressAPIBundle\Service\Category;
-use eZ\Publish\API\Repository\ContentService;
-use eZ\Publish\API\Repository\ContentTypeService;
-use eZ\Publish\API\Repository\LocationService;
-use eZ\Publish\API\Repository\SearchService;
+use BD\Bundle\WordpressAPIBundle\Service\CategoryServiceInterface;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Query;
 
-class CategoryService extends BaseService implements Category
+class CategoryService extends BaseService implements CategoryServiceInterface
 {
     protected static $blogCategoryIdentifier = 'blog_category';
 
