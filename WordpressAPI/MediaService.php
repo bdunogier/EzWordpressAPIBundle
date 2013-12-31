@@ -11,17 +11,39 @@ namespace BD\Bundle\EzWordpressAPIBundle\WordpressAPI;
 use BD\Bundle\WordpressAPIBundle\Service\MediaServiceInterface;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Query;
+use eZ\Publish\SPI\Variation\VariationHandler;
+use eZ\Publish\API\Repository\Values\Content\Field;
+use eZ\Publish\API\Repository\Values\Content\VersionInfo;
 
-class MediaServiceInterface extends BaseService implements MediaServiceInterface
+class MediaService extends BaseService implements MediaServiceInterface
 {
     protected static $imageContentTypeIdentifier = 'image';
 
-    public function __construct( array $options = array() )
+    protected static $imageFieldIdentifier = 'image';
+
+    protected static $imageThumbnailVariationName = 'thumbnail';
+
+    /** @var \eZ\Publish\SPI\Variation\VariationHandler */
+    protected $imageVariationHandler;
+
+    public function __construct( array $options = array(), VariationHandler $imageVariationHandler )
     {
         if ( isset( $options['image_content_type_identifier'] ) )
         {
             self::$imageContentTypeIdentifier = $options['image_content_type_identifier'];
         }
+
+        if ( isset( $options['image_field_identifier'] ) )
+        {
+            self::$imageFieldIdentifier = $options['image_field_identifier'];
+        }
+
+        if ( isset( $options['image_thumbnail_variation_name'] ) )
+        {
+            self::$imageThumbnailVariationName = $options['image_thumbnail_variation_name'];
+        }
+
+        $this->imageVariationHandler = $imageVariationHandler;
     }
 
     public function getMedia( $mediaItemId )
@@ -59,18 +81,71 @@ class MediaServiceInterface extends BaseService implements MediaServiceInterface
     protected function serializeContentAsMedia( Content $content )
     {
         $parentId = 0;
-        $thumbnail = '';
+        $link = '';
+        $description = '';
 
         return array(
             'attachment_id' => $content->id,
             'date_created_gmt' => $content->contentInfo->publishedDate,
             'parent' => $parentId,
-            'link' => '',
+            'link' => $link,
             'title' => (string)$content->fields['name']['eng-GB'],
             'caption' => (string)$content->fields['caption']['eng-GB'],
-            'description' => '',
-            'thumbnail' => $thumbnail,
-            'metadata' => array()
+            'description' => $description,
+            'thumbnail' => 'http://vm:88/' . $this->getThumbnail( $content ),
+            'metadata' => array(
+                array(
+                    'file' => '',
+                    'width' => 0,
+                    'height' => 0,
+                    'sizes' => array(
+                        'thumbnail' => array(
+                            'file' => '',
+                            'width' => 0,
+                            'height' => 0,
+                            'mime-type' => ''
+                        ),
+                        'medium' => array(
+                            'file' => '',
+                            'width' => 0,
+                            'height' => 0,
+                            'mime-type' => ''
+                        ),
+                        'large' => array(
+                            'file' => '',
+                            'width' => 0,
+                            'height' => 0,
+                            'mime-type' => ''
+                        ),
+                        'post-thumbnail' => array(
+                            'file' => '',
+                            'width' => 0,
+                            'height' => 0,
+                            'mime-type' => ''
+                        ),
+                    )
+                )
+            )
         );
+    }
+
+    protected function getThumbnail( Content $content )
+    {
+        foreach ( $content->getFields() as $field )
+        {
+            if ( $field->fieldDefIdentifier === self::$imageFieldIdentifier )
+            {
+                $imageField = $field;
+            }
+        }
+
+        if ( !isset( $field ) )
+        {
+            throw new Exception( "Image field not found" );
+        }
+
+        return $this->imageVariationHandler->getVariation(
+            $imageField, $content->versionInfo, self::$imageThumbnailVariationName
+        )->uri;
     }
 }

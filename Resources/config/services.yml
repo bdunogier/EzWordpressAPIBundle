@@ -41,3 +41,4 @@ services:
         parent: bd_ez_wordpress_api.service.base
         arguments:
             - { image_content_type_identifier: %bd_ez_wordpress_api.content_type.image% }
+            - @ezpublish.fieldType.ezimage.variation_service
