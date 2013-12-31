@@ -1,9 +1,12 @@
 parameters:
     bd_ez_wordpress_api.service.category.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\CategoryService
     bd_ez_wordpress_api.service.post.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\PostService
+    bd_ez_wordpress_api.service.media.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\MediaService
+    bd_ez_wordpress_api.service.base.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\BaseService
 
     bd_ez_wordpress_api.content_type.category: 'blog_category'
     bd_ez_wordpress_api.content_type.post: 'blog_post'
+    bd_ez_wordpress_api.content_type.image: 'blog_image'
 
 services:
     bd_wordpress_api.service.category:
@@ -12,20 +15,29 @@ services:
     bd_wordpress_api.service.post:
         alias: bd_ez_wordpress_api.service.post
 
+    bd_wordpress_api.service.media:
+        alias: bd_ez_wordpress_api.service.media
+
+    bd_ez_wordpress_api.service.base:
+        class: %bd_ez_wordpress_api.service.base.class%
+        abstract: true
+        calls:
+            - [ setRepository, [ @ezpublish.api.repository ] ]
+
     bd_ez_wordpress_api.service.category:
         class: %bd_ez_wordpress_api.service.category.class%
+        parent: bd_ez_wordpress_api.service.base
         arguments:
-            - @ezpublish.api.service.search
-            - @ezpublish.api.service.location
-            - @ezpublish.api.service.content_type
-            - @ezpublish.api.service.content
-            - { 'blog_category_identifier': %bd_ez_wordpress_api.content_type.category% }
+            - { blog_category_identifier: %bd_ez_wordpress_api.content_type.category% }
 
     bd_ez_wordpress_api.service.post:
         class: %bd_ez_wordpress_api.service.post.class%
+        parent: bd_ez_wordpress_api.service.base
         arguments:
-            - @ezpublish.api.service.content
-            - @ezpublish.api.service.location
-            - @ezpublish.api.service.content_type
-            - @ezpublish.api.service.search
-            - { 'content_type_identifier': %bd_ez_wordpress_api.content_type.post% }
+            - { content_type_identifier: %bd_ez_wordpress_api.content_type.post% }
+
+    bd_ez_wordpress_api.service.media:
+        class: %bd_ez_wordpress_api.service.media.class%
+        parent: bd_ez_wordpress_api.service.base
+        arguments:
+            - { image_content_type_identifier: %bd_ez_wordpress_api.content_type.image% }
