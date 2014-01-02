@@ -88,7 +88,7 @@ class MediaService extends BaseService implements MediaServiceInterface
             'attachment_id' => $content->id,
             'date_created_gmt' => $content->contentInfo->publishedDate,
             'parent' => $parentId,
-            'link' => $link,
+            'link' => 'http://vm:88/' . $this->getThumbnailUri( $content ),
             'title' => (string)$content->fields['name']['eng-GB'],
             'caption' => (string)$content->fields['caption']['eng-GB'],
             'description' => $description,
