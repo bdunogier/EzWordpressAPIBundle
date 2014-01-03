@@ -9,6 +9,7 @@
 namespace BD\Bundle\EzWordpressAPIBundle\WordpressAPI;
 
 use BD\Bundle\WordpressAPIBundle\Service\MediaServiceInterface;
+use eZ\Publish\API\Repository\Exceptions\InvalidVariationException;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Query;
 use eZ\Publish\SPI\Variation\VariationHandler;
@@ -48,7 +49,9 @@ class MediaService extends BaseService implements MediaServiceInterface
 
     public function getMedia( $mediaItemId )
     {
-
+        return $this->serializeContentAsMedia(
+            $this->getRepository()->getContentService()->loadContent( $mediaItemId )
+        );
     }
 
     public function getMediaList( $offset = 0, $limit = 50 )
@@ -64,14 +67,64 @@ class MediaService extends BaseService implements MediaServiceInterface
         $recentPosts = array();
         foreach ( $results->searchHits as $searchHit )
         {
-            $recentPosts[] = $this->serializeContentAsMedia( $searchHit->valueObject );
+            try
+            {
+                $recentPosts[] = $this->serializeContentAsMedia( $searchHit->valueObject );
+            }
+            catch ( InvalidVariationException $e )
+            {
+                // @todo log
+            }
         }
 
         return $recentPosts;
     }
 
-    public function uploadFile()
+    public function createImage( $name, $contents, $type, $overwrite, $contentId = 0 )
     {
+        $this->login( 'admin', 'publish' );
+
+        $contentService = $this->getRepository()->getContentService();
+        $contentTypeService = $this->getRepository()->getContentTypeService();
+
+        $contentCreateStruct = $contentService->newContentCreateStruct(
+            $contentTypeService->loadContentTypeByIdentifier( self::$imageContentTypeIdentifier ),
+            'eng-GB'
+        );
+
+        $extension = pathinfo( $name, PATHINFO_EXTENSION );
+        $temporaryFile = tempnam( sys_get_temp_dir(), 'ezwordpress_' ) . "." . $extension;
+        $fp = fopen( $temporaryFile, 'wb' );
+        fputs( $fp, $contents );
+        fclose( $fp );
+
+        $contentCreateStruct->setField( 'name', $name );
+        $contentCreateStruct->setField(
+            'image',
+            array(
+                'id' => $temporaryFile,
+                'fileName' => $name,
+                'fileSize' => strlen( $contents )
+            )
+        );
+
+        $content = $contentService->createContent(
+            $contentCreateStruct,
+            array(
+                $this->getRepository()->getLocationService()->newLocationCreateStruct( 51 )
+            )
+        );
+
+        $content = $contentService->publishVersion( $content->versionInfo );
+
+        $return = array(
+            'id' => (string)$content->id,
+            'file' => (string)$content->fields['image']['eng-GB'],
+            'url' => 'http://vm:88' . (string)$content->fields['image']['eng-GB']->uri,
+            'type' => $type
+        );
+
+        return $return;
     }
 
     /**
@@ -81,14 +134,13 @@ class MediaService extends BaseService implements MediaServiceInterface
     protected function serializeContentAsMedia( Content $content )
     {
         $parentId = 0;
-        $link = '';
         $description = '';
 
         return array(
             'attachment_id' => $content->id,
             'date_created_gmt' => $content->contentInfo->publishedDate,
             'parent' => $parentId,
-            'link' => 'http://vm:88/' . $this->getThumbnailUri( $content ),
+            'link' => 'http://vm:88/' . $this->getVariation( $content, 'original' )->uri,
             'title' => (string)$content->fields['name']['eng-GB'],
             'caption' => (string)$content->fields['caption']['eng-GB'],
             'description' => $description,

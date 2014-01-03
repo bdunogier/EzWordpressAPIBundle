@@ -11,6 +11,7 @@ namespace BD\Bundle\EzWordpressAPIBundle\WordpressAPI;
 use BD\Bundle\WordpressAPIBundle\Service\PostServiceInterface;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Query;
+use eZ\Publish\API\Repository\Values\Content\VersionInfo;
 
 class PostService extends BaseService implements PostServiceInterface
 {
@@ -26,6 +27,8 @@ class PostService extends BaseService implements PostServiceInterface
 
     public function createPost( $title, $description, array $categories )
     {
+        $this->login( 'admin', 'publish' );
+
         $contentService = $this->getRepository()->getContentService();
 
         $createStruct = $contentService->newContentCreateStruct(
@@ -60,21 +63,61 @@ class PostService extends BaseService implements PostServiceInterface
         return $recentPosts;
     }
 
+    public function deletePost( $postId )
+    {
+        $this->login( 'admin', 'publish' );
+        $this->getRepository()->getContentService()->deleteContent(
+            $this->getRepository()->getContentService()->loadContentInfo( $postId )
+        );
+    }
+
+    public function getPost( $postId )
+    {
+        return $this->serializeContentAsPost(
+            $this->getRepository()->getContentService()->loadContent( $postId )
+        );
+    }
+
     protected function serializeContentAsPost( Content $content )
     {
         return array(
             'post_id' => $content->id,
             'post_title' => (string)$content->fields['title']['eng-GB'],
             'post_date' => $content->versionInfo->creationDate,
-            'description' => '',
+            'post_date_gmt' => $content->versionInfo->creationDate,
+            'post_modified' => $content->versionInfo->modificationDate,
+            'post_modified_gmt' => $content->versionInfo->modificationDate,
+            'post_status' => $this->mapContentStatus( $content->versionInfo->status ),
+            'post_format' => 'standard',
+            'post_name' => '',
+            'post_author' => $content->contentInfo->ownerId,
+            'post_password' => '',
+            'post_excerpt' => '@todo excerpt',
+            'post_content' => '@todo content',
+            'post_parent' => 0,
+            'post_mime_type' => '',
             'link' => '',
-            'userId' => $content->contentInfo->ownerId,
-            'dateCreated' => $content->versionInfo->creationDate,
-            'date_created_gmt' => $content->versionInfo->creationDate,
-            'date_modified' => $content->versionInfo->modificationDate,
-            'date_modified_gmt' => $content->versionInfo->modificationDate,
-            'wp_post_thumbnail' => 0,
-            'categories' => array(),
+            'guid' => 0,
+            'menu_order' => 0,
+            'comment_status' => 'closed',
+            'ping_status' => 'closed',
+            'sticky' => false,
+            'post_thumbnail' => array( 'thumbnail' => '' ),
+            'terms' => array(),
         );
+    }
+
+    protected function mapContentStatus( $status )
+    {
+        switch ( $status )
+        {
+            case VersionInfo::STATUS_PUBLISHED:
+                return 'publish';
+            break;
+
+            case VersionInfo::STATUS_DRAFT:
+                return 'draft';
+            break;
+        }
     }
 }
