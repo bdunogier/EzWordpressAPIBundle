@@ -88,7 +88,19 @@ class PostService extends BaseService implements PostServiceInterface
 
     public function editPost( $postId, array $content )
     {
-        // TODO: Implement editPost() method.
+        $this->login( 'admin', 'publish' );
+
+        $contentService = $this->getRepository()->getContentService();
+
+        $updateStruct = $contentService->newContentUpdateStruct();
+        $updateStruct->setField( 'title', $content['post_title'] );
+
+        $draft = $contentService->updateContent(
+            $contentService->createContentDraft( $contentService->loadContentInfo( $postId ) )->versionInfo,
+            $updateStruct
+        );
+
+        return $contentService->publishVersion( $draft->versionInfo )->id;
     }
 
     protected function getPostType( $postId )
