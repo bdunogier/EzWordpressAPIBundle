@@ -34,7 +34,7 @@ services:
         class: %bd_ez_wordpress_api.service.post.class%
         parent: bd_ez_wordpress_api.service.base
         arguments:
-            - { content_type_identifier: %bd_ez_wordpress_api.content_type.post% }
+            - { blog_post_content_type_identifier: %bd_ez_wordpress_api.content_type.post% }
 
     bd_ez_wordpress_api.service.media:
         class: %bd_ez_wordpress_api.service.media.class%

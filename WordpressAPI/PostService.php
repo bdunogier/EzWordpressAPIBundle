@@ -12,20 +12,28 @@ use BD\Bundle\WordpressAPIBundle\Service\PostServiceInterface;
 use eZ\Publish\API\Repository\Values\Content\Content;
 use eZ\Publish\API\Repository\Values\Content\Query;
 use eZ\Publish\API\Repository\Values\Content\VersionInfo;
+use InvalidArgumentException;
 
 class PostService extends BaseService implements PostServiceInterface
 {
-    protected static $blogPostContentTypeId = 'blog_post';
+    protected static $blogPostContentTypeIdentifier = 'blog_post';
+
+    protected static $imageContentTypeIdentifier = 'blog_image';
 
     public function __construct( array $options = array() )
     {
-        if ( isset( $options['content_type_id'] ) )
+        if ( isset( $options['blog_post_content_type_identifier'] ) )
         {
-            self::$blogPostContentTypeId = $options['content_type_id'];
+            self::$blogPostContentTypeIdentifier = $options['blog_post_content_type_identifier'];
+        }
+
+        if ( isset( $options['image_content_type_identifier'] ) )
+        {
+            self::$blogPostContentTypeIdentifier = $options['image_content_type_identifier'];
         }
     }
 
-    public function createPost( $title, $description, array $categories )
+    public function createPost( array $content )
     {
         $this->login( 'admin', 'publish' );
 
@@ -34,10 +42,10 @@ class PostService extends BaseService implements PostServiceInterface
         $createStruct = $contentService->newContentCreateStruct(
             $this->getRepository()
                 ->getContentTypeService()
-                ->loadContentTypeByIdentifier( self::$blogPostContentTypeId ),
+                ->loadContentTypeByIdentifier( self::$blogPostContentTypeIdentifier ),
             'eng-GB'
         );
-        $createStruct->setField( 'title', $title );
+        $createStruct->setField( 'title', $content['post_title'] );
 
         $draft = $contentService->createContent(
             $createStruct,
@@ -78,6 +86,32 @@ class PostService extends BaseService implements PostServiceInterface
         );
     }
 
+    public function editPost( $postId, array $content )
+    {
+        // TODO: Implement editPost() method.
+    }
+
+    protected function getPostType( $postId )
+    {
+        $contentType = $this->getRepository()->getContentTypeService()->loadContentType(
+            $this->getRepository()->getContentService()->loadContent( $postId )->contentInfo->contentTypeId
+        );
+
+        switch ( $contentType->identifier )
+        {
+            case self::$blogPostContentTypeIdentifier:
+                return 'post';
+            break;
+
+            case self::$imageContentTypeIdentifier:
+                return 'attachment';
+            break;
+
+            default:
+                throw new InvalidArgumentException( "No post type found for '{$contentType->identifier}'" );
+        }
+    }
+
     protected function serializeContentAsPost( Content $content )
     {
         return array(
@@ -88,6 +122,7 @@ class PostService extends BaseService implements PostServiceInterface
             'post_modified' => $content->versionInfo->modificationDate,
             'post_modified_gmt' => $content->versionInfo->modificationDate,
             'post_status' => $this->mapContentStatus( $content->versionInfo->status ),
+            'post_type' => $this->getPostType( $content->id ),
             'post_format' => 'standard',
             'post_name' => '',
             'post_author' => $content->contentInfo->ownerId,
