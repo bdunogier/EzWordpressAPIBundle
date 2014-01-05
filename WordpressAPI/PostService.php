@@ -46,6 +46,7 @@ class PostService extends BaseService implements PostServiceInterface
             'eng-GB'
         );
         $createStruct->setField( 'title', $content['post_title'] );
+        $createStruct->setField( 'body', $this->processHtml( $content['post_content'] ) );
 
         $draft = $contentService->createContent(
             $createStruct,
@@ -94,6 +95,8 @@ class PostService extends BaseService implements PostServiceInterface
 
         $updateStruct = $contentService->newContentUpdateStruct();
         $updateStruct->setField( 'title', $content['post_title'] );
+        $updateStruct->setField( 'body', $this->processHtml( $content['post_content'] ) );
+        print_r( $updateStruct );
 
         $draft = $contentService->updateContent(
             $contentService->createContentDraft( $contentService->loadContentInfo( $postId ) )->versionInfo,
@@ -166,5 +169,48 @@ class PostService extends BaseService implements PostServiceInterface
                 return 'draft';
             break;
         }
+    }
+
+    /**
+     * Reference XML
+     * <?xml version="1.0" encoding="utf-8"?>
+     * <section xmlns:image="http://ez.no/namespaces/ezpublish3/image/"
+     *          xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/"
+     *          xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/">
+     * <paragraph><strong>bold</strong></paragraph>
+     * <paragraph><emphasize>italic</emphasize></paragraph>
+     * <paragraph><custom name="underline">underline</custom></paragraph>
+     * <paragraph><link url_id="59">ez.no</link></paragraph>
+     * </section>
+     */
+    protected function processHtml( $html )
+    {
+        $html = strip_tags( $html, '<em><strong><u>' );
+
+        $xml = <<<XML
+<?xml version="1.0" encoding="utf-8"?>
+<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/"
+         xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/"
+         xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/">
+    <paragraph>$html</paragraph>
+</section>
+XML;
+        $xml = str_replace(
+            array(
+                '<em>',
+                '</em>',
+                '<u>',
+                '</u>',
+            ),
+            array(
+                '<emphasize>',
+                '</emphasize>',
+                '<custom name="underline">',
+                '</custom>'
+            ),
+            $xml
+        );
+
+        return $xml;
     }
 }
