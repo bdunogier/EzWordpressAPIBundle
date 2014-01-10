@@ -3,6 +3,7 @@ parameters:
     bd_ez_wordpress_api.service.post.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\PostService
     bd_ez_wordpress_api.service.media.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\MediaService
     bd_ez_wordpress_api.service.base.class: BD\Bundle\EzWordpressAPIBundle\WordpressAPI\BaseService
+    bd_ez_wordpress_api.authentication.ez_publish_repository.class: BD\Bundle\EzWordpressAPIBundle\Authentication\EzPublishRepository
 
     bd_ez_wordpress_api.content_type.category: 'blog_category'
     bd_ez_wordpress_api.content_type.post: 'blog_post'
@@ -42,3 +43,10 @@ services:
         arguments:
             - { image_content_type_identifier: %bd_ez_wordpress_api.content_type.image% }
             - @ezpublish.fieldType.ezimage.variation_service
+
+    bd_ez_wordpress_api.authentication.ez_publish_repository:
+        class: %bd_ez_wordpress_api.authentication.ez_publish_repository.class%
+        arguments: [@ezpublish.api.repository]
+        tags:
+            - { name: bd_wordpress_api.authentication_handler }
+        lazy: true

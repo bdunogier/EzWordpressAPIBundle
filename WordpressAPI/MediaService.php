@@ -56,8 +56,6 @@ class MediaService extends BaseService implements MediaServiceInterface
 
     public function getMediaList( $offset = 0, $limit = 50 )
     {
-        $this->login( 'admin', 'publish' );
-
         $query = new Query();
         $query->criterion = new Query\Criterion\ContentTypeIdentifier( self::$imageContentTypeIdentifier );
         $query->offset = $offset;
@@ -82,8 +80,6 @@ class MediaService extends BaseService implements MediaServiceInterface
 
     public function createImage( $name, $contents, $type, $overwrite, $contentId = 0 )
     {
-        $this->login( 'admin', 'publish' );
-
         $contentService = $this->getRepository()->getContentService();
         $contentTypeService = $this->getRepository()->getContentTypeService();
 

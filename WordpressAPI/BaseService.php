@@ -27,11 +27,4 @@ class BaseService
     {
         return $this->repository;
     }
-
-    protected function login( $username, $password )
-    {
-        $this->getRepository()->setCurrentUser(
-            $this->getRepository()->getUserService()->loadUserByCredentials( $username, $password )
-        );
-    }
 }

@@ -35,8 +35,6 @@ class PostService extends BaseService implements PostServiceInterface
 
     public function createPost( array $content )
     {
-        $this->login( 'admin', 'publish' );
-
         $contentService = $this->getRepository()->getContentService();
 
         $createStruct = $contentService->newContentCreateStruct(
@@ -74,7 +72,6 @@ class PostService extends BaseService implements PostServiceInterface
 
     public function deletePost( $postId )
     {
-        $this->login( 'admin', 'publish' );
         $this->getRepository()->getContentService()->deleteContent(
             $this->getRepository()->getContentService()->loadContentInfo( $postId )
         );
@@ -89,8 +86,6 @@ class PostService extends BaseService implements PostServiceInterface
 
     public function editPost( $postId, array $content )
     {
-        $this->login( 'admin', 'publish' );
-
         $contentService = $this->getRepository()->getContentService();
 
         $updateStruct = $contentService->newContentUpdateStruct();
