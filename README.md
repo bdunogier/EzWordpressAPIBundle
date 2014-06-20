@@ -11,3 +11,5 @@ Add bdunogier/ezwordpressapibundle to your composer.json, and run composer updat
 
 - https://github.com/bdunogier/wordpressapibundle
 - http://github.com/ezsystems/ezpublish-kernel
+
+[![Analytics](https://ga-beacon.appspot.com/UA-52121860-1/EzWordpressAPIBundle/readme)](https://github.com/igrigorik/ga-beacon)
